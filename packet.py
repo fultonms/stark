@@ -41,7 +41,7 @@ class Packet(object):
         write_float = _writer('!f')
         write_double = _writer('!d')
 
-        def __bytes__(self):
+        def __str__(self):
                 return self.buffer.getvalue()
 
 class CMD:
