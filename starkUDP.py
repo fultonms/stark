@@ -20,7 +20,6 @@ def keepAlive():
 	sock.sendto(str(KA_PKT), addr)
 	threading.Timer(3, keepAlive).start()
 
-
 controller = Leap.Controller()
 
 try:
@@ -31,9 +30,9 @@ try:
 		frame = controller.frame()
 		hand = frame.hands[0]
 		if hand.palm_position.z < -30:
-			lv = 1
-		elif hand.palm_position.z > 40:
 			lv = -1
+		elif hand.palm_position.z > 30:
+			lv = 1
 		elif hand.palm_position.x < -30:
 			av = 1
 		elif hand.palm_position.x > 30:
