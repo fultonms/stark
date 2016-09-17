@@ -1,11 +1,20 @@
-import sys, Leap
+import Leap, time
+controller = Leap.Controller()
 
-def main():
-	print "Press Enter to quit."
-	try:
-		sys.stdin.readline()
-	except KeyboardInterrupt:
-		pass
-
-if __name__ == "__main__":
-	main()
+try:
+	while True:
+		frame = controller.frame()
+		hand = frame.hands[0]
+		if hand.palm_position.z < -30:
+			print "forward"
+		elif hand.palm_position.z > 40:
+			print "backward"
+		elif hand.palm_position.x < -30:
+			print "turning left"
+		elif hand.palm_position.x > 30:
+			print "turning right"
+		else:
+			print "stopped"
+		print str(hand.palm_position.y) + " is speed"
+except KeyboardInterrupt:
+	print "ending"
