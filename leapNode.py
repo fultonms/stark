@@ -37,13 +37,12 @@ try:
 			av = 1
 		elif hand.palm_position.x > 30:
 			av = -1
-		
-		if av != 0 or lv != 0:	
-			pkt = Packet()
-			pkt.write_ubyte(CMD.MOTION)
-			pkt.write_double(-LIN_V * lv)
-			pkt.write_double(-ANG_V * av)
-			sock.sendto(str(pkt), addr)
-			time.sleep(1)
+			
+		pkt = Packet()
+		pkt.write_ubyte(CMD.MOTION)
+		pkt.write_double(-LIN_V * lv)
+		pkt.write_double(-ANG_V * av)
+		sock.sendto(str(pkt), addr)
+		time.sleep(1)
 except KeyboardInterrupt:
 	print("ending")
