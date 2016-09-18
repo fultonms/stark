@@ -45,9 +45,9 @@ try:
 		elif hand.palm_position.z > 30:
 			lv = 1
 		elif hand.palm_position.x < -30:
-			av = 1
-		elif hand.palm_position.x > 30:
 			av = -1
+		elif hand.palm_position.x > 30:
+			av = 1
 		LIN_V,ANG_V = speed(hand.palm_position.y)
 		pkt = Packet()
 		pkt.write_ubyte(CMD.MOTION)
