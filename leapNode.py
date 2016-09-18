@@ -20,6 +20,11 @@ def keepAlive():
 	sock.sendto(str(KA_PKT), addr)
 	threading.Timer(3, keepAlive).start()
 
+def speed(y):
+        if (y > 500):
+                y = 500
+        return((y/500),(y/250))
+
 controller = Leap.Controller()
 
 try:
@@ -37,7 +42,18 @@ try:
 			av = 1
 		elif hand.palm_position.x > 30:
 			av = -1
-			
+
+		#scales the speed to different values
+		#if(hand.palm_position.y > 300):
+		#	LIN_V = 1.0
+		#	ANG_V = 2.0
+		#elif(hand.palm_position.y > 200):
+		#	LIN_V = 0.5
+		#	ANG_V = 1.0
+		#else:
+		#	Lin_V  = 0.2
+		#	ANG_V = 0.75
+		LIN_V,ANG_V = speed(hand.palm_position.y)
 		pkt = Packet()
 		pkt.write_ubyte(CMD.MOTION)
 		pkt.write_double(-LIN_V * lv)
