@@ -26,7 +26,13 @@ def speed(y):
         return((y/500),(y/250))
 
 controller = Leap.Controller()
-
+if(len(sys.argv) == 3):
+        print(sys.argv)
+        addr = (sys.argv[1],int(float(sys.argv[2])))
+        print(addr)
+else:
+        print('useage is leapNode address port')
+        print('using default')
 try:
 	keepAlive()
 	while True:
@@ -42,17 +48,6 @@ try:
 			av = 1
 		elif hand.palm_position.x > 30:
 			av = -1
-
-		#scales the speed to different values
-		#if(hand.palm_position.y > 300):
-		#	LIN_V = 1.0
-		#	ANG_V = 2.0
-		#elif(hand.palm_position.y > 200):
-		#	LIN_V = 0.5
-		#	ANG_V = 1.0
-		#else:
-		#	Lin_V  = 0.2
-		#	ANG_V = 0.75
 		LIN_V,ANG_V = speed(hand.palm_position.y)
 		pkt = Packet()
 		pkt.write_ubyte(CMD.MOTION)
