@@ -1,18 +1,22 @@
 import speech_recognition as sr
-from test import audiotests
+import time
 import socket
 import sys
 import threading
 import struct
-from cStringIO import StringIO	
 from packet import Packet, CMD
 
 botIp = {} #used as a dictionary for botIps
-botIp['lou']  =  ("137.143.63.255", 13698)
+botIp['donatello']  =  ("137.143.52.234", 13676)
 botIp['raphael'] =  ("137.143.63.255", 13698)
 
+cmd_buffer = list()
+
+LIN_V = 0.2
+ANG_V = 1
+
 KA_PKT = Packet()
-KA_PKT.write_int(CMD.KEEPALIVE)
+KA_PKT.write_ubyte(CMD.KEEPALIVE)
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -21,76 +25,82 @@ r = sr.Recognizer()
 m = sr.Microphone()
 
 def keepAlive():
-    sock.sendto(str(KA_PKT), botIp['lou'])
+    for key in botIp:
+        sock.sendto(str(KA_PKT), botIp[key])
     threading.Timer(3, keepAlive).start()
 
+def controlLoop(ip):
+    global LIN_V, ANG_V
+    word = None
+    while('end' != word and 'exit' != word):
+        if len(cmd_buffer)> 0 : 
+            word = cmd_buffer.pop()
+            print word
+            lv = 0
+            av = 0
+            if('forward' == word or 'charge' == word):
+                lv = LIN_V * 1
+            elif('backward' == word or 'reverse' == word):
+                lv = LIN_V * -1
+            elif('right' == word):
+                av = ANG_V * 1
+            elif('left' == word):
+                av = ANG_V * -1
+            elif('faster' == word):
+                LIN_V += 0.2
+                ANG_V += 0.2
+                print LIN_V, ANG_V
+            elif('slower' == word):
+                LIN_V = LIN_V - 0.2    
+                ANG_V = ANG_V - 0.2
+                print LIN_V, ANG_V
+            elif('stop' == word):
+                lv = 0
+                av = 0
+            elif('sing' == word):
+                
+            else:
+                pass
+            
+            pkt = Packet()
+            pkt.write_ubyte(CMD.MOTION)
+            pkt.write_double(lv)
+            pkt.write_double(av)
+            sock.sendto(str(pkt), ip)
+            time.sleep(0.5)
+            
+    print('leaving control loop')
 
-def findSpeed(words):
-    if('one' in words):
-        return(.2)
-    elif('three' in words):
-        return(1)
-    else:
-        return(.5)
 
-def control(words,ip):
-    name = words[0]
-    print('droping into {0}\'s control'.format(name))
-    while('end' not in words):
-        lspeed = 0
-        aspeed = 0
-        if('forward' in words):
-            lspeed = findSpeed(words)
-        elif('backward' in words):
-            lspeed = findSpeed(words) * -1
-        elif('right' in words):
-            aspeed = findSpeed(words) * 2
-        elif('left' in words):
-            aspeed = findSpeed(words) * -2
-        print('linear: ' + str(lspeed) + " rotational: " + str(aspeed))
-        pkt = Packet()
-        pkt.write_ubyte(CMD.MOTION)
-        pkt.write_double(lspeed)
-        pkt.write_double(aspeed)
-        sock.sendto(str(pkt), ip)
-        print("Listening...")
-        #with m as source: audio = r.listen(source)
-        try:
-            print"Recognizing..."
-            #command = r.recognize_sphinx(audio)
-            command = raw_input('debugging : ')
-            print("You said: {0}".format(command))
-            words = command.split(' ')
-        except sr.UnknownValueError:
+def callback(recognizer, audio):
+    global cmd_buffer
+    try:
+        words = recognizer.recognize_google(audio).split()
+        cmd_buffer.extend([str(item.lower()) for item in words])
+    except sr.UnknownValueError:
             print ("Didn't catch that")
-        except sr.RequestError as e:
+    except sr.RequestError as e:
             print("Sphinx error; {0}".format(e))
-    print('leaving {0}\'s control'.format(name))
-
-
-
 
 keepAlive()
 try:
     print("Quiet please!")
     with m as source: r.adjust_for_ambient_noise(source)
     print("Ambient levels detected.")
+    stop_listening = r.listen_in_background(m, callback)
     while True:
-        print("Listening...")
-        #with m as source: audio = r.listen(source)
         try:
-            print"Recognizing..."
-            #command = r.recognize_sphinx(audio)
-            command = raw_input('deubugging: ')
-            print("You said: {0}".format(command))
-            words = command.split(' ')
-            if(words[0] == 'lou' or words[0] == 'raphael'):
-                control(words,botIp[words[0]])
-            
+            if len(cmd_buffer)> 0 : 
+                word = cmd_buffer.pop()
+                if(word == 'donatello' or word == 'raphael'):
+                    print('dropping into {0}\'s control'.format(word))
+                    controlLoop(botIp[word])
+            time.sleep(0.1)
         except sr.UnknownValueError:
             print ("Didn't catch that")
         except sr.RequestError as e:
             print("Sphinx error; {0}".format(e))
             
 except KeyboardInterrupt:
+    stop_listening()
     pass            
