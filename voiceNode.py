@@ -4,6 +4,7 @@ import socket
 import sys
 import threading
 import struct
+from random import randint
 from packet import Packet, CMD
 
 botIp = {} #used as a dictionary for botIps
@@ -34,7 +35,7 @@ def controlLoop(ip):
     word = None
     while('end' != word and 'exit' != word):
         if len(cmd_buffer)> 0 : 
-            word = cmd_buffer.pop()
+            word = cmd_buffer.pop(0)
             print word
             lv = 0
             av = 0
@@ -43,9 +44,9 @@ def controlLoop(ip):
             elif('backward' == word or 'reverse' == word):
                 lv = LIN_V * -1
             elif('right' == word):
-                av = ANG_V * 1
-            elif('left' == word):
                 av = ANG_V * -1
+            elif('left' == word):
+                av = ANG_V * 1
             elif('faster' == word):
                 LIN_V += 0.2
                 ANG_V += 0.2
@@ -58,6 +59,11 @@ def controlLoop(ip):
                 lv = 0
                 av = 0
             elif('sing' == word):
+                pkt = Packet()
+                pkt.write_ubyte(CMD.SOUND)
+                val = randint(0, 6)
+                pkt.write_ubyte(val)
+                sock.sendto(str(pkt), ip)
                 
             else:
                 pass
@@ -67,7 +73,6 @@ def controlLoop(ip):
             pkt.write_double(lv)
             pkt.write_double(av)
             sock.sendto(str(pkt), ip)
-            time.sleep(0.5)
             
     print('leaving control loop')
 
@@ -91,7 +96,7 @@ try:
     while True:
         try:
             if len(cmd_buffer)> 0 : 
-                word = cmd_buffer.pop()
+                word = cmd_buffer.pop(0)
                 if(word == 'donatello' or word == 'raphael'):
                     print('dropping into {0}\'s control'.format(word))
                     controlLoop(botIp[word])
